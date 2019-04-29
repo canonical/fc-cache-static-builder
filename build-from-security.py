@@ -60,7 +60,7 @@ def build_fontconfig(release):
             subprocess.call("echo {} >> {}/debian/patches/series".format(os.path.basename(p), pkgsrcdir), shell=True)
     # do the normal build first
     subprocess.check_call(["sudo", "apt-get", "-y", "build-dep", pkgsrcdir])
-    subprocess.check_call(["dpkg-buildpackage", "-uc", "-us" "-Zgzip"], cwd=pkgsrcdir)
+    subprocess.check_call(["dpkg-buildpackage", "-uc", "-us", "-Zgzip"], cwd=pkgsrcdir)
     triplet=subprocess.check_output(["dpkg-architecture", "-qDEB_HOST_MULTIARCH"]).decode().strip()
     # then use this to get the static build
     subprocess.check_output("../libtool  --tag=CC   --mode=link gcc   -g -O2 -pthread   -o fc-cache fc-cache.o ../src/.libs/libfontconfig.a /usr/lib/{triplet}/libfreetype.a /usr/lib/{triplet}/libexpat.a /usr/lib/{triplet}/libpng.a -lz -lm".format(triplet=triplet), shell=True, cwd=os.path.join(pkgsrcdir, "fc-cache"))
