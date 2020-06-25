@@ -42,10 +42,21 @@ deb-src {base_uri} {dist}-security main
         # fetch/extract source (python-apt uses dpkg-source -x interally)
         pkg_src_dir = tempfile.mkdtemp(prefix="{}-{}-src".format(release, pkgname))
         os.makedirs(pkg_src_dir, exist_ok=True)
-        pkg = cache["fontconfig"]
+        pkg = cache[pkgname]
         if not glob.glob("{}/{}-*".format(pkg_src_dir, pkgname)):
             pkg.candidate.fetch_source(destdir=pkg_src_dir)
     return pkg_src_dir
+
+
+def build_freetype(release):
+    pkgbasesrcdir = fetch_source_from_security(release, "libfreetype6-dev")
+    atexit.register(shutil.rmtree, pkgbasesrcdir)
+    pkgsrcdir = glob.glob(pkgbasesrcdir+"/freetype-*")[0]
+    # XXX: apply any patches
+    subprocess.check_call(["sudo", "apt-get", "-y", "build-dep", pkgsrcdir])
+    subprocess.check_call(["dpkg-buildpackage", "-uc", "-us", "-Zgzip"], cwd=pkgsrcdir)
+    debs = glob.glob(pkgbasesrcdir+"/*.deb")
+    subprocess.check_call(["sudo", "apt-get", "install", "-y"]+debs)
 
 
 def build_fontconfig(release):
@@ -72,5 +83,7 @@ def build_fontconfig(release):
 if __name__ == "__main__":
     release = sys.argv[1]
     subprocess.check_call(["sudo", "apt-get", "install", "-y", "build-essential"])
+    if release != "xenial":
+        build_freetype(release)
     build_fontconfig(release)
     
